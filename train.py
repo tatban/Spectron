@@ -20,7 +20,7 @@ from scipy.io.wavfile import write
 # arguments / hyper parameters:
 DEVICE = "cuda"
 SEED = 3407
-BATCH_SIZE = 4
+BATCH_SIZE = 1
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-7
 MAX_EPOCHS = 2  # 01
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             qrs = qrs.to(DEVICE)  # dim: N x T(no of temporal samples)
 
             # get reference speech embedding
-            speaker_embeds, embed_covs = spk_enc(qrs, return_cov=True)  # speaker_embeds refers to the mean / centroid embedding of the reference speech, dim: N x embed_length
+            speaker_embeds = spk_enc(qrs)  # speaker_embeds refers to the mean / centroid embedding of the reference speech, dim: N x embed_length
 
             # get the estimated clean speech from model forward
             est_speech, tf_op = sep_model(mix, speaker_embeds)   # est_speech dim: N x 1 x T , tf_op dim: N x 1 x W x H   todo: check op dimensions
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             est_tf_rep = sep_model.forward_encoder(est_speech)  # dim: N x W x H
 
             # calculate training losses
-            wfrl = re_criterion(est_speech, src)  # Wave Form Reconstruction quality Loss  todo:check dimension
+            wfrl = re_criterion(est_speech.squeeze(1), src.squeeze(1))  # Wave Form Reconstruction quality Loss  todo:check dimension
             secl = em_criterion(est_speaker_embeds, speaker_embeds)  # Speaker Embedding Consistency Loss
             tfcl = tf_criterion(est_tf_rep, tf_op.squeeze(1))  # Time Frequency Consistency Loss
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
                 qrs_v = qrs_v.to(DEVICE)
 
                 # get reference speech embedding
-                speaker_embeds_v, embed_covs_v = spk_enc(qrs_v, return_cov=True)  # speaker_embeds refers to the mean / centroid embedding of the reference speech, dim: N x embed_length
+                speaker_embeds_v = spk_enc(qrs_v)  # speaker_embeds refers to the mean / centroid embedding of the reference speech, dim: N x embed_length
 
                 # get the estimated clean speech from model forward
                 est_speech_v, tf_op_v = sep_model(mix_v, speaker_embeds_v)  # est_speech dim: N x T , tf_op dim: N x W x H
@@ -160,7 +160,7 @@ if __name__ == "__main__":
                 est_tf_rep_v = sep_model.forward_encoder(est_speech_v)  # dim: N x W x H
 
                 # calculate training losses
-                wfrl_v = re_criterion(est_speech_v, src_v)  # Wave Form Reconstruction quality Loss  todo:check dimension
+                wfrl_v = re_criterion(est_speech_v.squeeze(1), src_v.squeeze(1))  # Wave Form Reconstruction quality Loss  todo:check dimension
                 secl_v = em_criterion(est_speaker_embeds_v, speaker_embeds_v)  # Speaker Embedding Consistency Loss
                 tfcl_v = tf_criterion(est_tf_rep_v, tf_op_v.squeeze(1))  # Time Frequency Consistency Loss
 
