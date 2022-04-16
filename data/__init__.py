@@ -1,1 +1,1 @@
-from voice_filter_ds import voiceFilterDataset
+from .voice_filter_ds import voiceFilterDataset

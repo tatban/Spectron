@@ -21,16 +21,16 @@ SEED = 3407
 BATCH_SIZE = 4
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-7
-MAX_EPOCHS = 2  # 01
+MAX_EPOCHS = 201
 SDR_TYPE = 'sisdr'
 WFRL_WEIGHT = 1
 SECL_WEIGHT = 1e3
 TFCL_WEIGHT = 1e6
-BATCH_PRINT_STRIDE = 400
+BATCH_PRINT_STRIDE = 1000
 VAL_BATCH_PRINT_STRIDE = 89
 SOURCE_SR = 16000  # only for speaker encoder, for separator SR=8000
 FIXED_SE = False
-OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS_debug2/VOICE_FILTER_DS"
+OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS/VOICE_FILTER_DS"
 FIXED_AUDIO_INDEX = [1588, 2335, 1607, 203, 308, 1592, 1095, 2216, 2187, 1790, 2191, 1596]
 NORMALIZE_AUDIO_BEFORE_SAVE = True
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
             speaker_embeds = spk_enc(qrs)  # speaker_embeds refers to the mean / centroid embedding of the reference speech, dim: N x embed_length
 
             # get the estimated clean speech from model forward
-            est_speech, tf_op = sep_model(mix, speaker_embeds)   # est_speech dim: N x 1 x T , tf_op dim: N x 1 x W x H   todo: check op dimensions
+            est_speech, tf_op = sep_model(mix, speaker_embeds)   # est_speech dim: N x 1 x T , tf_op dim: N x 1 x W x H
 
             # get the consistency outputs
             # embedding consistency
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             est_tf_rep = sep_model.forward_encoder(est_speech)  # dim: N x W x H
 
             # calculate training losses
-            wfrl = re_criterion(est_speech.squeeze(1), src.squeeze(1))  # Wave Form Reconstruction quality Loss  todo:check dimension
+            wfrl = re_criterion(est_speech.squeeze(1), src.squeeze(1))  # Wave Form Reconstruction quality Loss
             secl = em_criterion(est_speaker_embeds, speaker_embeds)  # Speaker Embedding Consistency Loss
             tfcl = tf_criterion(est_tf_rep, tf_op.squeeze(1))  # Time Frequency Consistency Loss
 
@@ -131,8 +131,7 @@ if __name__ == "__main__":
             writer.add_scalar("Training Loss/Total Loss", total_loss.item(), global_step=step)
             if (train_batch_idx + 1) % BATCH_PRINT_STRIDE == 0:
                 logging.info(f"Batch: {train_batch_idx + 1}\t\tWFRL: {wfrl.item():.4f}\t\tSECL: {secl.item() * SECL_WEIGHT:.4f}\t\tTFCL: {tfcl.item() * TFCL_WEIGHT:.4f}\t\tTOTAL: {total_loss.item():.4f}")
-            if train_batch_idx > 400:  # debug
-                break
+
         # validation
         spk_enc.eval()
         sep_model.eval()
@@ -161,7 +160,7 @@ if __name__ == "__main__":
                 est_tf_rep_v = sep_model.forward_encoder(est_speech_v)  # dim: N x W x H
 
                 # calculate training losses
-                wfrl_v = re_criterion(est_speech_v.squeeze(1), src_v.squeeze(1))  # Wave Form Reconstruction quality Loss  todo:check dimension
+                wfrl_v = re_criterion(est_speech_v.squeeze(1), src_v.squeeze(1))  # Wave Form Reconstruction quality Loss
                 secl_v = em_criterion(est_speaker_embeds_v, speaker_embeds_v)  # Speaker Embedding Consistency Loss
                 tfcl_v = tf_criterion(est_tf_rep_v, tf_op_v.squeeze(1))  # Time Frequency Consistency Loss
 
@@ -175,8 +174,7 @@ if __name__ == "__main__":
                 writer.add_scalar("Validation Loss/Total Loss", total_loss_v.item(), global_step=step)
                 if (val_batch_idx + 1) % VAL_BATCH_PRINT_STRIDE == 0:
                     logging.info(f"Batch: {val_batch_idx + 1}\t\tWFRL: {wfrl_v.item():.4f}\t\tSECL: {secl_v.item() * SECL_WEIGHT:.4f}\t\tTFCL: {tfcl_v.item() * TFCL_WEIGHT:.4f}\t\tTOTAL: {total_loss_v.item():.4f}")
-                if val_batch_idx > 89:  # debug
-                    break
+
             val_loss_epoch = sum(val_losses) / len(val_losses)
             if val_loss_epoch < best_val_loss:
                 best_val_loss = val_loss_epoch
@@ -189,8 +187,8 @@ if __name__ == "__main__":
                     },
                     os.path.join(OUT_DIR, f"best_model_for_voice_filter_dataset.pth")
                 )
-                # log audio
-                print(f"Length of validation dataset: {len(val_dataset)}")  # debug
+
+                # log audio samples
                 for idx in FIXED_AUDIO_INDEX:
                     if idx < len(val_dataset):
                         mx_f, gt_f, qr_f = val_dataset[idx]
