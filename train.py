@@ -1,7 +1,5 @@
-import glob
 import os
 import random
-import statistics
 import sys
 import numpy as np
 from torch.nn import MSELoss
@@ -14,13 +12,13 @@ import torch
 from models import Spectron, SpeakerEncoder
 from asteroid.losses.sdr import SingleSrcNegSDR
 import logging
-from scipy.io.wavfile import write
+from utils import audio_logger_local
 
 
 # arguments / hyper parameters:
 DEVICE = "cuda"
 SEED = 3407
-BATCH_SIZE = 1
+BATCH_SIZE = 4
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-7
 MAX_EPOCHS = 2  # 01
@@ -32,7 +30,9 @@ BATCH_PRINT_STRIDE = 400
 VAL_BATCH_PRINT_STRIDE = 89
 SOURCE_SR = 16000  # only for speaker encoder, for separator SR=8000
 FIXED_SE = False
-OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS_DEBUG/VOICE_FILTER_DS"
+OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS_debug2/VOICE_FILTER_DS"
+FIXED_AUDIO_INDEX = [1588, 2335, 1607, 203, 308, 1592, 1095, 2216, 2187, 1790, 2191, 1596]
+NORMALIZE_AUDIO_BEFORE_SAVE = True
 
 
 # logging
@@ -131,7 +131,8 @@ if __name__ == "__main__":
             writer.add_scalar("Training Loss/Total Loss", total_loss.item(), global_step=step)
             if (train_batch_idx + 1) % BATCH_PRINT_STRIDE == 0:
                 logging.info(f"Batch: {train_batch_idx + 1}\t\tWFRL: {wfrl.item():.4f}\t\tSECL: {secl.item() * SECL_WEIGHT:.4f}\t\tTFCL: {tfcl.item() * TFCL_WEIGHT:.4f}\t\tTOTAL: {total_loss.item():.4f}")
-
+            if train_batch_idx > 400:  # debug
+                break
         # validation
         spk_enc.eval()
         sep_model.eval()
@@ -150,7 +151,7 @@ if __name__ == "__main__":
                 speaker_embeds_v = spk_enc(qrs_v)  # speaker_embeds refers to the mean / centroid embedding of the reference speech, dim: N x embed_length
 
                 # get the estimated clean speech from model forward
-                est_speech_v, tf_op_v = sep_model(mix_v, speaker_embeds_v)  # est_speech dim: N x T , tf_op dim: N x W x H
+                est_speech_v, tf_op_v = sep_model(mix_v, speaker_embeds_v)  # est_speech dim: N x 1 x T , tf_op dim: N x W x H
 
                 # get the consistency outputs
                 # embedding consistency
@@ -174,7 +175,8 @@ if __name__ == "__main__":
                 writer.add_scalar("Validation Loss/Total Loss", total_loss_v.item(), global_step=step)
                 if (val_batch_idx + 1) % VAL_BATCH_PRINT_STRIDE == 0:
                     logging.info(f"Batch: {val_batch_idx + 1}\t\tWFRL: {wfrl_v.item():.4f}\t\tSECL: {secl_v.item() * SECL_WEIGHT:.4f}\t\tTFCL: {tfcl_v.item() * TFCL_WEIGHT:.4f}\t\tTOTAL: {total_loss_v.item():.4f}")
-
+                if val_batch_idx > 89:  # debug
+                    break
             val_loss_epoch = sum(val_losses) / len(val_losses)
             if val_loss_epoch < best_val_loss:
                 best_val_loss = val_loss_epoch
@@ -188,21 +190,18 @@ if __name__ == "__main__":
                     os.path.join(OUT_DIR, f"best_model_for_voice_filter_dataset.pth")
                 )
                 # log audio
-                # for idx in FIXED_AUDIO_INDEX:
-                #     if idx < len(val_dataset):
-                #         mx_f, gt_f, qr_f = val_dataset[idx]
-                #         mx_f = mx_f.unsqueeze(0).to(DEVICE)
-                #         gt_f = gt_f.unsqueeze(0).to(DEVICE)
-                #         qr_f = qr_f.unsqueeze(0).to(DEVICE)
-                #
-                #         pred_audios = []
-                #
-                #         for ix_f in range(gt_f.shape[1]):
-                #             se_f = spk_enc(qr_f[:, ix_f, :])
-                #             op_f, _ = sep_model(mx_f, se_f)
-                #             pred_audios.append(op_f.detach().to('cpu'))
-                #
-                #         audio_logger_local(os.path.join(OUT_DIR, "Audio Samples", f"index_{idx}"), mx_f, gt_f, qr_f, predictions=pred_audios, global_step=e, extra_info=f"avg_loss_{val_loss_epoch}", normalize=NORMALIZE_AUDIO_BEFORE_SAVE)
+                print(f"Length of validation dataset: {len(val_dataset)}")  # debug
+                for idx in FIXED_AUDIO_INDEX:
+                    if idx < len(val_dataset):
+                        mx_f, gt_f, qr_f = val_dataset[idx]
+                        mx_f = mx_f.unsqueeze(0).to(DEVICE)
+                        gt_f = gt_f.unsqueeze(0).unsqueeze(0)
+                        qr_f = qr_f.unsqueeze(0).to(DEVICE)
+
+                        se_f = spk_enc(qr_f)
+                        op_f, _ = sep_model(mx_f, se_f)
+
+                        audio_logger_local(os.path.join(OUT_DIR, "Audio Samples", f"index_{idx}"), mx_f, gt_f, qr_f.unsqueeze(0), predictions=[op_f.detach().to('cpu')], global_step=e, extra_info=f"avg_loss_{val_loss_epoch}", normalize=NORMALIZE_AUDIO_BEFORE_SAVE)
 
     logging.info(f"\nTraining complete. Best epoch validation loss is {best_val_loss} achieved in epoch {best_epoch}.")
 
