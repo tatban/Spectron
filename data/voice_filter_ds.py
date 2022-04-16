@@ -8,15 +8,18 @@ from torchaudio.transforms import Resample
 
 class voiceFilterDataset(Dataset):
     # this assumes preprocessed audios are already there in the paths mentioned in the csv file
-    def __init__(self, mode="test"):
+    def __init__(self, mode="test", source_sr=16000, target_sr_for_sep=8000):
         self.mode = mode
         self.csv_path = f"data/{mode}_normalized_mixed.csv"
         self.df = pd.read_csv(self.csv_path)
+        self.source_sr = source_sr
+        self.target_sr = target_sr_for_sep
+        self.resampler = Resample(self.source_sr, self.target_sr)
 
     def __getitem__(self, item):
         row = self.df.iloc[item]
-        mix = torch.from_numpy(sf.read(row["mix_path"], dtype="float32")[0])
-        src = torch.from_numpy(sf.read(row["s1_path"], dtype="float32")[0])
+        mix = self.resampler(torch.from_numpy(sf.read(row["mix_path"], dtype="float32")[0]))
+        src = self.resampler(torch.from_numpy(sf.read(row["s1_path"], dtype="float32")[0]))
         ref = torch.from_numpy(sf.read(row["r1_path"], dtype="float32")[0])
 
         return mix, src, ref

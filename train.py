@@ -30,7 +30,7 @@ SECL_WEIGHT = 1e3
 TFCL_WEIGHT = 1e6
 BATCH_PRINT_STRIDE = 400
 VAL_BATCH_PRINT_STRIDE = 89
-SOURCE_SR = 16000
+SOURCE_SR = 16000  # only for speaker encoder, for separator SR=8000
 FIXED_SE = False
 OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS_DEBUG/VOICE_FILTER_DS"
 
