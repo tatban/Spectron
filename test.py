@@ -66,8 +66,8 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
                 SI_SNRs.extend(si_snr.squeeze().cpu().tolist())
                 SI_SNRis.extend(si_snri.squeeze().cpu().tolist())
             else:  # for the last batch
-                SI_SNRs.append(si_snr.squeeze().cpu())
-                SI_SNRis.append(si_snri.squeeze().cpu())
+                SI_SNRs.append(si_snr.squeeze().cpu().item())
+                SI_SNRis.append(si_snri.squeeze().cpu().item())
         logging.info(f"{exp_nm}_{ds_nm}\t\tAvg SDR: {statistics.mean(SDRs):.4f}\t\tAvg SDRi: {statistics.mean(SDRis):.4f}\t\tAvg SI-SNR: {statistics.mean(SI_SNRs):.4f}\t\tAvg SI-SNRi: {statistics.mean(SI_SNRis):.4f}")
 
 
