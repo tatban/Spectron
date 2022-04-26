@@ -43,7 +43,7 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
             spk_embed = enc_model(qrs)
             est_speech, _ = sep_model(mix, spk_embed)  # dim: N x T where N = batch size
             target_speech = src  # dim: N x T where N = batch size
-
+            est_speech = est_speech.squeeze(1)
             # compute SDR and SDRi
             for i in range(src.shape[0]):  # intra batch looping as bss_eval doesn't support batched data
                 sdr, _, _, _ = bss_eval_sources(
@@ -59,8 +59,8 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
                 SDRis.append(sdr_i)
 
             # compute SI-SNR (also known as SI-SDR) and SI-SNRi
-            si_snr = -si_snr_eval(est_speech.squeeze(), target_speech.squeeze())  # dim: (N,) where N = batch size
-            si_snr_baseline = -si_snr_eval(mix.squeeze(), target_speech.squeeze())
+            si_snr = -si_snr_eval(est_speech, target_speech)  # dim: (N,) where N = batch size
+            si_snr_baseline = -si_snr_eval(mix, target_speech)
             si_snri = si_snr - si_snr_baseline  # dim: (N,) where N = batch size
             SI_SNRs.extend(si_snr.squeeze().cpu().tolist())
             SI_SNRis.extend(si_snri.squeeze().cpu().tolist())
