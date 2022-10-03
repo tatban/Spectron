@@ -22,7 +22,7 @@ SEED = 3407
 BATCH_SIZE = 4
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-7
-MAX_EPOCHS = 3
+MAX_EPOCHS = 201
 SDR_TYPE = 'sisdr'
 WFRL_WEIGHT = 1
 SECL_WEIGHT = 1e3
@@ -31,11 +31,13 @@ BATCH_PRINT_STRIDE = 1000
 VAL_BATCH_PRINT_STRIDE = 89
 SOURCE_SR = 16000  # only for speaker encoder, for separator SR=8000
 FIXED_SE = False
-OUT_DIR = "/home/tbandyo/idp4vc_ws/SPECTRON_GAN_LOGS/VOICE_FILTER_DS/SPECTRON_MSD_DBG"
-FIXED_AUDIO_INDEX = [1588, 2335, 1607, 203, 308, 1592, 1095, 2216, 2187, 1790, 2191, 1596]
+OUT_DIR = "/home/tbandyo/idp4vc_ws/SPECTRON_GAN_LOGS/VOICE_FILTER_DS/SPECTRON_MSD"
+# FIXED_AUDIO_INDEX = [1588, 2335, 1607, 203, 308, 1592, 1095, 2216, 2187, 1790, 2191, 1596]
+FIXED_AUDIO_INDEX = [2335, 2216, 2187, 2191]
 NORMALIZE_AUDIO_BEFORE_SAVE = True
 CHECKPOINT_INTERVAL = 5  # every 5 epoch checkpoint will be saved
-
+CHKPT_PATH = None
+START_EPOCH = 0
 
 # logging
 Path(OUT_DIR).mkdir(parents=True, exist_ok=True)
@@ -83,10 +85,19 @@ val_loader_length = len(val_loader)
 best_val_loss = 1000
 best_epoch = -1
 
+# resume
+if CHKPT_PATH is not None:
+    chkpt = torch.load(CHKPT_PATH)
+    sep_model.load_state_dict(chkpt["SPECTRON"])
+    spk_enc.load_state_dict(chkpt["SE"])
+    optimizer.load_state_dict(chkpt["OPTIM"])
+    optim_d.load_state_dict(chkpt["OPTIM_D"])
+    msd.load_state_dict(chkpt["MSD"])
+    START_EPOCH = chkpt["EPOCH"]+1
 
 # loop
 if __name__ == "__main__":
-    for e in range(MAX_EPOCHS):
+    for e in range(START_EPOCH, MAX_EPOCHS):
         logging.info(f"\nRunning epoch: {e + 1} of {MAX_EPOCHS}\n------------------------\n")
 
         # training
@@ -206,6 +217,7 @@ if __name__ == "__main__":
                         'SE': spk_enc.state_dict(),  # speaker encoder weights
                         'OPTIM': optimizer.state_dict(),
                         'OPTIM_D': optim_d.state_dict(),
+                        'MSD': msd.state_dict(),
                         'EPOCH': e
                     },
                     os.path.join(OUT_DIR, f"latest_chkpt_model_for_voice_filter_dataset.pth")
@@ -220,6 +232,7 @@ if __name__ == "__main__":
                         'SE': spk_enc.state_dict(),  # speaker encoder weights
                         'OPTIM': optimizer.state_dict(),
                         'OPTIM_D': optim_d.state_dict(),
+                        'MSD': msd.state_dict(),
                         'EPOCH': e
                     },
                     os.path.join(OUT_DIR, f"best_model_for_voice_filter_dataset.pth")
