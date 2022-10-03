@@ -8,9 +8,14 @@ from torchaudio.transforms import Resample
 
 class voiceFilterDataset(Dataset):
     # this assumes preprocessed audios are already there in the paths mentioned in the csv file
-    def __init__(self, mode="test", source_sr=16000, target_sr_for_sep=8000):
+    def __init__(self, mode="test", source_sr=16000, target_sr_for_sep=8000, data_store="raid"):
         self.mode = mode
-        self.csv_path = f"data/{mode}_normalized_mixed.csv"
+        if data_store == "raid":
+            self.csv_path = f"data/{mode}_normalized_mixed.csv"
+        elif data_store == "local":
+            self.csv_path = f"data/{mode}_normalized_mixed_local.csv"
+        else:
+            raise ValueError(f"{data_store} data store is not supported. Please choose from 'raid' or 'local'.")
         self.df = pd.read_csv(self.csv_path)
         self.source_sr = source_sr
         self.target_sr = target_sr_for_sep
