@@ -9,15 +9,19 @@ from models import Spectron, SpeakerEncoder
 from asteroid.losses.sdr import SingleSrcNegSDR
 import logging
 from mir_eval.separation import bss_eval_sources
+from torchmetrics.audio.stoi import STOI
+from torchmetrics.audio.pesq import PESQ
 
 # OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/QSEP_LOGS/inference_eval"
 OUT_DIR = "/home/tbandyo/idp4vc_ws/SPECTRON_GAN_LOGS/VOICE_FILTER_DS/inference_eval"
 Path(OUT_DIR).mkdir(parents=True, exist_ok=True)
-logging.basicConfig(level=logging.DEBUG, filename=os.path.join(OUT_DIR, "inference_logs.txt"), filemode='a', format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG, filename=os.path.join(OUT_DIR, "inference_logs_STOI_PESQ.txt"), filemode='a', format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 
 si_snr_eval = SingleSrcNegSDR(sdr_type="sisdr")
+stoi_obj = STOI(8000, False)
+pesq_obj = PESQ(8000, 'nb')  # Sampling rate 8000 Hz in narrow band mode
 
 
 def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
@@ -30,6 +34,10 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
     SDRis = []
     SI_SNRs = []
     SI_SNRis = []
+    STOIs = []
+    STOI_GTs = []
+    PESQs = []
+    PESQ_GTs = []
 
     with torch.no_grad():
         for idx, batch in enumerate(test_loader):
@@ -59,6 +67,13 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
                 sdr_i = sdr.mean() - sdr_baseline.mean()
                 SDRis.append(sdr_i)
 
+                # STOI and PESQ
+                STOIs.append(stoi_obj(est_speech[i, :], target_speech[i, :]).item())
+                STOI_GTs.append(stoi_obj(target_speech[i, :], target_speech[i, :]).item())
+
+                PESQs.append(pesq_obj(est_speech[i, :], target_speech[i, :]).item())
+                PESQ_GTs.append(pesq_obj(target_speech[i, :], target_speech[i, :]).item())
+
             # compute SI-SNR (also known as SI-SDR) and SI-SNRi
             si_snr = -si_snr_eval(est_speech, target_speech)  # dim: (N,) where N = batch size
             si_snr_baseline = -si_snr_eval(mix, target_speech)
@@ -70,6 +85,7 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
                 SI_SNRs.append(si_snr.squeeze().cpu().item())
                 SI_SNRis.append(si_snri.squeeze().cpu().item())
         logging.info(f"{exp_nm}_{ds_nm}\t\tAvg SDR: {statistics.mean(SDRs):.4f}\t\tAvg SDRi: {statistics.mean(SDRis):.4f}\t\tAvg SI-SNR: {statistics.mean(SI_SNRs):.4f}\t\tAvg SI-SNRi: {statistics.mean(SI_SNRis):.4f}")
+        logging.info(f"{exp_nm}_{ds_nm}\t\tAvg STOI: {statistics.mean(STOIs):.4f}\t\tGT STOI: {statistics.mean(STOI_GTs):.4f}\t\tAvg PESQ: {statistics.mean(PESQs):.4f}\t\tGT PESQ: {statistics.mean(PESQ_GTs):.4f}")
 
 
 if __name__ == "__main__":
@@ -117,6 +133,3 @@ if __name__ == "__main__":
     model.eval()
 
     inference_batch(model, speaker_encoder, test_ldr, DEVICE, exp_name, dataset)
-
-
-
