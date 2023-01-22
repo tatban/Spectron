@@ -10,7 +10,8 @@ from asteroid.losses.sdr import SingleSrcNegSDR
 import logging
 from mir_eval.separation import bss_eval_sources
 
-OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/QSEP_LOGS/inference_eval"
+# OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/QSEP_LOGS/inference_eval"
+OUT_DIR = "/home/tbandyo/idp4vc_ws/SPECTRON_GAN_LOGS/VOICE_FILTER_DS/inference_eval"
 Path(OUT_DIR).mkdir(parents=True, exist_ok=True)
 logging.basicConfig(level=logging.DEBUG, filename=os.path.join(OUT_DIR, "inference_logs.txt"), filemode='a', format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
@@ -94,11 +95,11 @@ if __name__ == "__main__":
     BATCH_SIZE = 16
     N_WORKERS = 16
 
-    exp_name = "Spectron"
+    exp_name = "SpectronMSD"
     dataset = "VFDS"
-    weights_path = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS/VOICE_FILTER_DS/best_model_for_voice_filter_dataset.pth"
-
-    test_set = VFDS(mode="test")
+    # weights_path = "/mnt/raid/tbandyo/idp4vc_ws/SPECTRON_LOGS/VOICE_FILTER_DS/best_model_for_voice_filter_dataset.pth"
+    weights_path = "/home/tbandyo/idp4vc_ws/SPECTRON_GAN_LOGS/VOICE_FILTER_DS/SPECTRON_MSD/best_model_for_voice_filter_dataset.pth"
+    test_set = VFDS(mode="test", data_store="local")
     test_ldr = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False, num_workers=N_WORKERS)
 
     speaker_encoder = SpeakerEncoder(source_sr=SOURCE_SR, device=DEVICE, fixed_encoder=FIXED_SE).to(DEVICE)
