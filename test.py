@@ -11,6 +11,7 @@ import logging
 from mir_eval.separation import bss_eval_sources
 from torchmetrics.audio.stoi import STOI
 from torchmetrics.audio.pesq import PESQ
+from timeit import default_timer as timer
 
 # OUT_DIR = "/mnt/raid/tbandyo/idp4vc_ws/QSEP_LOGS/inference_eval"
 OUT_DIR = "/home/tbandyo/idp4vc_ws/SPECTRON_GAN_LOGS/VOICE_FILTER_DS/inference_eval"
@@ -38,6 +39,7 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
     STOI_GTs = []
     PESQs = []
     PESQ_GTs = []
+    times_ar = []
 
     with torch.no_grad():
         for idx, batch in enumerate(test_loader):
@@ -49,10 +51,13 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
 
             # fwd pass
             # iterate over the number of speakers (sources)
+            start = timer()
             spk_embed = enc_model(qrs)
             est_speech, _ = sep_model(mix, spk_embed)  # dim: N x T where N = batch size
             target_speech = src  # dim: N x T where N = batch size
             est_speech = est_speech.squeeze(1)
+            stop = timer()
+            times_ar.append(stop-start)
             # compute SDR and SDRi
             for i in range(src.shape[0]):  # intra batch looping as bss_eval doesn't support batched data
                 sdr, _, _, _ = bss_eval_sources(
@@ -86,6 +91,7 @@ def inference_batch(sep_model, enc_model, test_loader, device, exp_nm, ds_nm):
                 SI_SNRis.append(si_snri.squeeze().cpu().item())
         logging.info(f"{exp_nm}_{ds_nm}\t\tAvg SDR: {statistics.mean(SDRs):.4f}\t\tAvg SDRi: {statistics.mean(SDRis):.4f}\t\tAvg SI-SNR: {statistics.mean(SI_SNRs):.4f}\t\tAvg SI-SNRi: {statistics.mean(SI_SNRis):.4f}")
         logging.info(f"{exp_nm}_{ds_nm}\t\tAvg STOI: {statistics.mean(STOIs):.4f}\t\tGT STOI: {statistics.mean(STOI_GTs):.4f}\t\tAvg PESQ: {statistics.mean(PESQs):.4f}\t\tGT PESQ: {statistics.mean(PESQ_GTs):.4f}")
+        logging.info(f"Avg Time: {statistics.mean(times_ar) / BATCH_SIZE} Seconds")
 
 
 if __name__ == "__main__":
