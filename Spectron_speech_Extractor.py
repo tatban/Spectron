@@ -7,6 +7,8 @@ from pathlib import Path
 import soundfile as sf
 from scipy.io.wavfile import write
 from torchaudio.transforms import Resample
+from timeit import default_timer as timer
+import statistics
 
 SOURCE_SR_ref = 16000
 SOURCE_SR_mix = 8000
@@ -58,6 +60,7 @@ def extract_speeches(root_path=r"C:\Users\Tathagata\OneDrive\Desktop\Spectron_re
 
     # process audios in loop:
     mix_files = Path(mixture_path).glob('*.wav')
+    time_array = []
     for file in mix_files:
         method_name, _, file_number = file.name.split("_")
 
@@ -68,6 +71,7 @@ def extract_speeches(root_path=r"C:\Users\Tathagata\OneDrive\Desktop\Spectron_re
         query_w = torch.from_numpy(reference_sample).unsqueeze(0).to(DEVICE)
 
         with torch.no_grad():
+            start = timer()
             if msr != SOURCE_SR_mix:
                 mix_w = Resample(msr, SOURCE_SR_mix).to(DEVICE)(mix_w)
             if rsr != SOURCE_SR_ref:
@@ -78,7 +82,11 @@ def extract_speeches(root_path=r"C:\Users\Tathagata\OneDrive\Desktop\Spectron_re
             prediction = est_speech.detach().squeeze().to('cpu')
         out_audio = prediction.numpy().reshape(-1, 1)  # Warning!!!: works only for batch size 1 and mono audios
         out_audio = 2. * (out_audio - np.min(out_audio)) / np.ptp(out_audio) - 1
+        end = timer()
+        time_array.append(end-start)
         write(os.path.join(est_path, f"spectron_out_{file_number}"), SOURCE_SR_mix, out_audio)
+    print(f"Times in seconds:\n{time_array}\n")
+    print(f"Average time on {DEVICE}: {statistics.mean(time_array[1:])} seconds")
 
 
 if __name__ == "__main__":
