@@ -17,7 +17,14 @@ We assume the dataset is same as [VoiceFilter](https://google.github.io/speaker-
 - run: ``python test.py``
 
 ## Results
-![image](https://github.com/user-attachments/assets/b5d94c15-2198-46f6-8d28-3f7635f8d2d3)
+
+| Model | SDRi (dB) | SI-SNRi (dB) |
+| --- | --- | --- |
+| VoiceFilter | 7.8 | - |
+| AtssNet | 9.3 | - |
+| X-TasNet | 13.8 | 12.7 |
+| Spectron without MSD (ours) | 13.9 | 12.8 |
+| Spectron (ours) | <b>14.4</b> | <b>13.3</b> |
 
 ## Citation
 If you use this piece of code, please cite:
