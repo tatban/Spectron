@@ -4,6 +4,8 @@
 Recently, attention-based transformers have become a defacto standard in many deep learning applications including natural language processing, computer vision, signal processing, etc.. In this paper, we propose a transformer-based end-to-end model to extract a target speaker’s speech from a monaural multi-speaker mixed audio signal. Unlike existing speaker extraction methods, we introduce two additional objectives to impose speaker embedding consistency and waveform encoder invertibility and jointly train both speaker encoder and speech separator to better capture the speaker conditional embedding. Furthermore, we leverage a multiscale discriminator to refine the perceptual quality of the extracted speech. Our experiments show that the use of a dual path transformer in the separator backbone along with proposed training paradigm improves the CNN baseline by 3.12 dB points. Finally, we compare our approach with recent state-of-the-arts and show that our model outperforms existing methods by 4.1 dB points on an average without creating additional data dependency</div>
 ![image](https://github.com/user-attachments/assets/bb422ebd-df12-49cf-8411-797d2b0ca9f0) <br>
 Project Page: [https://tatban.github.io/spec-res/](https://tatban.github.io/spec-res/) 
+Paper: [https://arxiv.org/abs/2409.01352](https://arxiv.org/abs/2409.01352)
+
 ## Dataset
 We assume the dataset is same as [VoiceFilter](https://google.github.io/speaker-id/publications/VoiceFilter/) paper. Data paths must be updated in the corresponding .csv files in ``data`` folder
 ## Training
@@ -16,3 +18,15 @@ We assume the dataset is same as [VoiceFilter](https://google.github.io/speaker-
 
 ## Results
 ![image](https://github.com/user-attachments/assets/b5d94c15-2198-46f6-8d28-3f7635f8d2d3)
+
+## Citation
+If you use this piece of code, please cite:
+``@misc{bandyopadhyay2024spectrontargetspeakerextraction,
+      title={Spectron: Target Speaker Extraction using Conditional Transformer with Adversarial Refinement}, 
+      author={Tathagata Bandyopadhyay},
+      year={2024},
+      eprint={2409.01352},
+      archivePrefix={arXiv},
+      primaryClass={cs.SD},
+      url={https://arxiv.org/abs/2409.01352}, 
+}``
