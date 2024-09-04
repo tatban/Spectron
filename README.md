@@ -21,7 +21,8 @@ We assume the dataset is same as [VoiceFilter](https://google.github.io/speaker-
 
 ## Citation
 If you use this piece of code, please cite:
-```@misc{bandyopadhyay2024spectrontargetspeakerextraction,
+```
+@misc{bandyopadhyay2024spectrontargetspeakerextraction,
       title={Spectron: Target Speaker Extraction using Conditional Transformer with Adversarial Refinement}, 
       author={Tathagata Bandyopadhyay},
       year={2024},
@@ -29,4 +30,5 @@ If you use this piece of code, please cite:
       archivePrefix={arXiv},
       primaryClass={cs.SD},
       url={https://arxiv.org/abs/2409.01352}, 
-}```
+}
+```
