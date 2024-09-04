@@ -2,7 +2,7 @@
 
 ## Abstract
 Recently, attention-based transformers have become a defacto standard in many deep learning applications including natural language processing, computer vision, signal processing, etc.. In this paper, we propose a transformer-based end-to-end model to extract a target speaker’s speech from a monaural multi-speaker mixed audio signal. Unlike existing speaker extraction methods, we introduce two additional objectives to impose speaker embedding consistency and waveform encoder invertibility and jointly train both speaker encoder and speech separator to better capture the speaker conditional embedding. Furthermore, we leverage a multiscale discriminator to refine the perceptual quality of the extracted speech. Our experiments show that the use of a dual path transformer in the separator backbone along with proposed training paradigm improves the CNN baseline by 3.12 dB points. Finally, we compare our approach with recent state-of-the-arts and show that our model outperforms existing methods by 4.1 dB points on an average without creating additional data dependency</div>
-![image](https://github.com/user-attachments/assets/bb422ebd-df12-49cf-8411-797d2b0ca9f0) <br>
+![image](https://tatban.github.io/spec-res/Spectron_GAN.png) <br>
 - <b>Project Page:<b> [https://tatban.github.io/spec-res/](https://tatban.github.io/spec-res/) 
 - <b>Paper:<b> [https://arxiv.org/abs/2409.01352](https://arxiv.org/abs/2409.01352)
 
